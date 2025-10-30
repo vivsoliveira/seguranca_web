@@ -1,0 +1,37 @@
+{
+  "scan_info": {
+    "target_url": "http://testphp.vulnweb.com",
+    "timestamp": "2025-10-30T17:07:14.038345",
+    "scan_duration": 8.483872652053833,
+    "total_vulnerabilities": 2
+  },
+  "vulnerabilities": [
+    {
+      "type": "XSS (Cross-Site Scripting)",
+      "severity": "MÉDIA",
+      "url": "http://testphp.vulnweb.com/search.php?test=query",
+      "method": "POST",
+      "payload": "<script>alert('XSS')</script>",
+      "parameter": "searchFor"
+    },
+    {
+      "type": "SQL Injection",
+      "severity": "ALTA",
+      "url": "http://testphp.vulnweb.com/search.php?test=query",
+      "method": "POST",
+      "payload": "admin' --",
+      "parameter": "searchFor",
+      "error": "sql syntax"
+    }
+  ],
+  "summary": {
+    "tests_performed": [
+      "XSS",
+      "SQL Injection"
+    ],
+    "severity_count": {
+      "MÉDIA": 1,
+      "ALTA": 1
+    }
+  }
+}
