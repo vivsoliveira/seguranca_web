@@ -27,7 +27,7 @@ cd web-security-scanner
 
 ### Passo 2: Instalar Dependências
 
-**Ubuntu/Debian:**
+**Linux:**
 ```bash
 sudo apt update
 sudo apt install -y nmap nikto
