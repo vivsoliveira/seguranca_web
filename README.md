@@ -71,7 +71,7 @@ python3 src/scanner.py http://testphp.vulnweb.com
 Iniciar servidor web:
 
 ```bash
-python3 src/web_interface.py
+python3 src/interface.py
 ```
 
 Acessar no navegador:
