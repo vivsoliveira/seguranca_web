@@ -1,0 +1,32 @@
+{
+  "scan_info": {
+    "target_url": "http://sayercamp.com.br",
+    "timestamp": "2025-11-06T17:59:15.550627",
+    "scan_duration": 1.8491065502166748,
+    "total_vulnerabilities": 1
+  },
+  "vulnerabilities": [
+    {
+      "type": "Insecure Headers",
+      "severity": "BAIXA",
+      "url": "http://sayercamp.com.br",
+      "method": "GET",
+      "payload": "N/A",
+      "parameter": "X-Frame-Options (Proteção contra Clickjacking), X-Content-Type-Options (Proteção contra MIME sniffing), Strict-Transport-Security (Força uso de HTTPS), Content-Security-Policy (Proteção contra XSS), X-XSS-Protection (Filtro XSS do navegador)"
+    }
+  ],
+  "summary": {
+    "tests_performed": [
+      "XSS",
+      "SQL Injection",
+      "CSRF",
+      "Path Traversal",
+      "File Inclusion",
+      "Sensitive Data Exposure",
+      "Insecure Headers"
+    ],
+    "severity_count": {
+      "BAIXA": 1
+    }
+  }
+}

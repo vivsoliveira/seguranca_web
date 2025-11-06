@@ -1,0 +1,32 @@
+{
+  "scan_info": {
+    "target_url": "http://testphp.vulnweb.com",
+    "timestamp": "2025-11-06T17:58:03.861116",
+    "scan_duration": 1.9361894130706787,
+    "total_vulnerabilities": 1
+  },
+  "vulnerabilities": [
+    {
+      "type": "Insecure Headers",
+      "severity": "BAIXA",
+      "url": "http://testphp.vulnweb.com",
+      "method": "GET",
+      "payload": "N/A",
+      "parameter": "X-Frame-Options (Proteção contra Clickjacking), X-Content-Type-Options (Proteção contra MIME sniffing), Strict-Transport-Security (Força uso de HTTPS), Content-Security-Policy (Proteção contra XSS), X-XSS-Protection (Filtro XSS do navegador)"
+    }
+  ],
+  "summary": {
+    "tests_performed": [
+      "XSS",
+      "SQL Injection",
+      "CSRF",
+      "Path Traversal",
+      "File Inclusion",
+      "Sensitive Data Exposure",
+      "Insecure Headers"
+    ],
+    "severity_count": {
+      "BAIXA": 1
+    }
+  }
+}
