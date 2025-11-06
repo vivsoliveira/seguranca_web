@@ -1,10 +1,12 @@
 import requests
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 import time
 from datetime import datetime
 import sys
 from pathlib import Path
+import re
+import os
 
 sys.path.insert(0, str(Path(__file__).parent))
 from report_generator import ReportGenerator
@@ -33,10 +35,32 @@ class WebScanner:
             "admin' --",
             "' UNION SELECT NULL--"
         ]
+        
+        self.path_traversal_payloads = [
+            "../../../etc/passwd",
+            "..\\..\\..\\windows\\win.ini",
+            "....//....//....//etc/passwd",
+            "..%2F..%2F..%2Fetc%2Fpasswd"
+        ]
+        
+        self.lfi_payloads = [
+            "../../../../etc/passwd",
+            "..%2F..%2F..%2F..%2Fetc%2Fpasswd",
+            "/etc/passwd",
+            "C:\\windows\\system32\\drivers\\etc\\hosts",
+            "php://filter/convert.base64-encode/resource=index.php"
+        ]
+        
+        self.rfi_payloads = [
+            "http://evil.com/shell.txt",
+            "https://evil.com/backdoor.php"
+        ]
     
     def scan(self):
         self.start_time = time.time()
         print_info(f"Hora de início: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        
+        self.check_security_headers()
         
         forms = self.get_forms()
         if not forms:
@@ -50,7 +74,12 @@ class WebScanner:
             print_info(f"Testando formulário {i}/{len(forms)}")
             self.test_xss(form)
             self.test_sql_injection(form)
+            self.test_csrf(form)
+            self.test_path_traversal(form)
+            self.test_file_inclusion(form)
             print()
+        
+        self.test_sensitive_data_exposure()
         
         self.end_time = time.time()
         duration = self.end_time - self.start_time
@@ -122,6 +151,78 @@ class WebScanner:
             
             time.sleep(0.5)
     
+    def test_csrf(self, form):
+        details = self.get_form_details(form)
+        
+        csrf_tokens = ['csrf', 'token', '_token', 'csrf_token', 'authenticity_token']
+        has_csrf_protection = False
+        
+        for input_field in details["inputs"]:
+            input_name = input_field["name"].lower()
+            if any(token in input_name for token in csrf_tokens):
+                has_csrf_protection = True
+                break
+        
+        if not has_csrf_protection and details["method"] == "post":
+            url = urljoin(self.url, details["action"])
+            vuln = {
+                "type": "CSRF (Cross-Site Request Forgery)",
+                "severity": "MÉDIA",
+                "url": url,
+                "method": details["method"].upper(),
+                "payload": "N/A",
+                "parameter": "Formulário sem token CSRF"
+            }
+            self.vulnerabilities.append(vuln)
+            print(format_vulnerability_output(vuln))
+    
+    def test_path_traversal(self, form):
+        details = self.get_form_details(form)
+        
+        for payload in self.path_traversal_payloads:
+            data = {}
+            for input_field in details["inputs"]:
+                if input_field["type"] in ["text", "search", "file"]:
+                    data[input_field["name"]] = payload
+                else:
+                    data[input_field["name"]] = "test"
+            
+            url = urljoin(self.url, details["action"])
+            
+            try:
+                if details["method"] == "post":
+                    response = requests.post(url, data=data, timeout=5)
+                else:
+                    response = requests.get(url, params=data, timeout=5)
+                
+                traversal_indicators = [
+                    "root:x:",
+                    "[extensions]",
+                    "bin/bash",
+                    "windows",
+                    "system32"
+                ]
+                
+                response_lower = response.text.lower()
+                for indicator in traversal_indicators:
+                    if indicator in response_lower:
+                        vuln = {
+                            "type": "Path Traversal",
+                            "severity": "ALTA",
+                            "url": url,
+                            "method": details["method"].upper(),
+                            "payload": payload,
+                            "parameter": list(data.keys())[0] if data else "N/A"
+                        }
+                        self.vulnerabilities.append(vuln)
+                        print(format_vulnerability_output(vuln))
+                        return
+                        
+            except Exception:
+                continue
+            
+            time.sleep(0.5)
+    
     def test_sql_injection(self, form):
         details = self.get_form_details(form)
         
@@ -171,10 +272,171 @@ class WebScanner:
             
             time.sleep(0.5)
     
+    def test_file_inclusion(self, form):
+        details = self.get_form_details(form)
+        
+        for payload in self.lfi_payloads:
+            data = {}
+            for input_field in details["inputs"]:
+                if input_field["type"] in ["text", "search", "file"]:
+                    data[input_field["name"]] = payload
+                else:
+                    data[input_field["name"]] = "test"
+            
+            url = urljoin(self.url, details["action"])
+            
+            try:
+                if details["method"] == "post":
+                    response = requests.post(url, data=data, timeout=5)
+                else:
+                    response = requests.get(url, params=data, timeout=5)
+                
+                lfi_indicators = [
+                    "root:x:",
+                    "daemon:",
+                    "[extensions]",
+                    "bin/bash",
+                    "# localhost",
+                    "<?php"
+                ]
+                
+                response_lower = response.text.lower()
+                for indicator in lfi_indicators:
+                    if indicator.lower() in response_lower:
+                        vuln = {
+                            "type": "Local File Inclusion (LFI)",
+                            "severity": "ALTA",
+                            "url": url,
+                            "method": details["method"].upper(),
+                            "payload": payload,
+                            "parameter": list(data.keys())[0] if data else "N/A"
+                        }
+                        self.vulnerabilities.append(vuln)
+                        print(format_vulnerability_output(vuln))
+                        return
+                        
+            except Exception:
+                continue
+            
+            time.sleep(0.5)
+    
+    def test_sensitive_data_exposure(self):
+        try:
+            common_files = [
+                '/.env',
+                '/config.php',
+                '/wp-config.php',
+                '/database.yml',
+                '/.git/config',
+                '/backup.sql',
+                '/phpinfo.php',
+                '/admin',
+                '/robots.txt',
+                '/.DS_Store'
+            ]
+            
+            for file_path in common_files:
+                test_url = urljoin(self.url, file_path)
+                
+                try:
+                    response = requests.get(test_url, timeout=3)
+                    
+                    if response.status_code == 200:
+                        sensitive_patterns = [
+                            'password',
+                            'api_key',
+                            'secret',
+                            'db_password',
+                            'mysql',
+                            'postgres',
+                            'mongodb',
+                            'aws_access',
+                            'private_key'
+                        ]
+                        
+                        content_lower = response.text.lower()
+                        found_patterns = [p for p in sensitive_patterns if p in content_lower]
+                        
+                        if found_patterns or len(response.text) > 100:
+                            vuln = {
+                                "type": "Sensitive Data Exposure",
+                                "severity": "ALTA" if found_patterns else "MÉDIA",
+                                "url": test_url,
+                                "method": "GET",
+                                "payload": "N/A",
+                                "parameter": f"Arquivo exposto: {file_path}"
+                            }
+                            
+                            if found_patterns:
+                                vuln["details"] = f"Padrões sensíveis encontrados: {', '.join(found_patterns)}"
+                            
+                            self.vulnerabilities.append(vuln)
+                            print(format_vulnerability_output(vuln))
+                
+                except Exception:
+                    continue
+                
+                time.sleep(0.3)
+                
+        except Exception:
+            pass
+    
+    def check_security_headers(self):
+        try:
+            response = requests.get(self.url, timeout=5)
+            headers = response.headers
+            
+            required_headers = {
+                'X-Frame-Options': 'Proteção contra Clickjacking',
+                'X-Content-Type-Options': 'Proteção contra MIME sniffing',
+                'Strict-Transport-Security': 'Força uso de HTTPS',
+                'Content-Security-Policy': 'Proteção contra XSS',
+                'X-XSS-Protection': 'Filtro XSS do navegador'
+            }
+            
+            missing_headers = []
+            for header, description in required_headers.items():
+                if header not in headers:
+                    missing_headers.append(f"{header} ({description})")
+            
+            if missing_headers:
+                vuln = {
+                    "type": "Insecure Headers",
+                    "severity": "BAIXA",
+                    "url": self.url,
+                    "method": "GET",
+                    "payload": "N/A",
+                    "parameter": ", ".join(missing_headers)
+                }
+                self.vulnerabilities.append(vuln)
+                print(format_vulnerability_output(vuln))
+                
+        except Exception:
+            pass
+    
     def get_scan_duration(self):
         if self.start_time and self.end_time:
             return self.end_time - self.start_time
         return None
+
+
+def get_incremental_filename(url, format='json'):
+    """Gera nome de arquivo incremental baseado na URL"""
+    parsed = urlparse(url)
+    domain = parsed.netloc.replace('www.', '').replace('.', '_').replace(':', '_')
+    
+    domain = re.sub(r'[^a-zA-Z0-9_]', '', domain)
+    
+    reports_dir = Path('reports')
+    reports_dir.mkdir(exist_ok=True)
+    
+    counter = 1
+    while True:
+        filename = f"{domain}{counter}.{format}"
+        filepath = reports_dir / filename
+        if not filepath.exists():
+            return str(filepath)
+        counter += 1
 
 
 def main():
@@ -182,18 +444,12 @@ def main():
     
     if len(sys.argv) < 2:
         print_error("Uso incorreto!")
-        print_info("Uso: python scanner.py <URL> [--format FORMAT]")
-        print_info("Exemplo: python scanner.py http://testphp.vulnweb.com --format json")
-        print_info("Formatos: txt, json, csv, md")
+        print_info("Uso: python scanner.py <URL>")
+        print_info("Exemplo: python scanner.py http://testphp.vulnweb.com")
         sys.exit(1)
     
     target = sys.argv[1]
-    
-    report_format = 'txt'
-    if '--format' in sys.argv:
-        format_index = sys.argv.index('--format')
-        if format_index + 1 < len(sys.argv):
-            report_format = sys.argv[format_index + 1]
+    report_format = 'json'  # Formato padrão JSON
     
     if not is_valid_http_url(target):
         print_error(f"URL inválida: {target}")
@@ -203,24 +459,18 @@ def main():
     scanner = WebScanner(target)
     scanner.scan()
     
-    print_info(f"\nGerando relatório em formato {report_format.upper()}...")
     generator = ReportGenerator(
         scanner.vulnerabilities, 
         target,
         scanner.get_scan_duration()
     )
     
-    if report_format == 'txt':
-        print("\n" + generator.generate_text_report())
-    elif report_format == 'json':
-        print("\n" + generator.generate_json_report())
-    elif report_format == 'csv':
-        print("\n" + generator.generate_csv_report())
-    elif report_format == 'md':
-        print("\n" + generator.generate_markdown_report())
-    
     try:
-        filepath = generator.save_report(report_format)
+        filepath = get_incremental_filename(target, report_format)
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(generator.generate_json_report())
+        
         print_success(f"Relatório salvo em: {filepath}")
     except Exception as e:
         print_error(f"Erro ao salvar relatório: {str(e)}")

@@ -18,8 +18,8 @@ def print_banner():
     """Exibe banner da ferramenta"""
     banner = """
     ╔═══════════════════════════════════════════════════════╗
-    ║          Web Security Scanner - Conceito C            ║
-    ║              Ferramenta de Testes de Segurança        ║
+    ║                Web Security Scanner -                 ║
+    ║          Ferramenta de Testes de Segurança            ║
     ╚═══════════════════════════════════════════════════════╝
     """
     print(Colors.OKCYAN + banner + Colors.ENDC)
@@ -106,7 +106,7 @@ def format_vulnerability_output(vuln):
 
 def get_user_agent():
     """Retorna User-Agent padrão para requisições"""
-    return "WebSecurityScanner/1.0 (Educational Purpose)"
+    return "WebSecurityScanner/1.0"
 
 def truncate_string(text, max_length=100):
     """Trunca string se for muito longa"""

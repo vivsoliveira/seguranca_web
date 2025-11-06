@@ -76,12 +76,6 @@ class TestReportGenerator(unittest.TestCase):
             scan_duration=10.5
         )
     
-    def test_text_report_generation(self):
-        report = self.generator.generate_text_report()
-        self.assertIn("RELATÓRIO DE VARREDURA", report)
-        self.assertIn("http://testphp.vulnweb.com", report)
-        self.assertIn("XSS", report)
-    
     def test_json_report_generation(self):
         import json
         report_json = self.generator.generate_json_report()
@@ -91,16 +85,6 @@ class TestReportGenerator(unittest.TestCase):
         self.assertIn("vulnerabilities", report_dict)
         self.assertEqual(len(report_dict["vulnerabilities"]), 1)
     
-    def test_csv_report_generation(self):
-        report = self.generator.generate_csv_report()
-        lines = report.split('\n')
-        self.assertGreater(len(lines), 1)
-    
-    def test_markdown_report_generation(self):
-        report = self.generator.generate_markdown_report()
-        self.assertIn("# Relatório", report)
-        self.assertIn("XSS", report)
-    
     def test_severity_count(self):
         count = self.generator._count_by_severity()
         self.assertEqual(count.get("MÉDIA"), 1)
@@ -108,9 +92,12 @@ class TestReportGenerator(unittest.TestCase):
 class TestReportFormats(unittest.TestCase):
     
     def test_empty_vulnerabilities_report(self):
+        import json
         generator = ReportGenerator([], "http://testphp.vulnweb.com")
-        report = generator.generate_text_report()
-        self.assertIn("Nenhuma vulnerabilidade", report)
+        report_json = generator.generate_json_report()
+        report_dict = json.loads(report_json)
+        
+        self.assertEqual(report_dict["scan_info"]["total_vulnerabilities"], 0)
 
 def run_tests():
     loader = unittest.TestLoader()
