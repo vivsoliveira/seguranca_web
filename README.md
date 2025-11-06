@@ -25,11 +25,7 @@ git clone git@github.com:vivsoliveira/seguranca_web.git # para linux
 cd web-security-scanner
 ```
 
-### Passo 2: Instalar Dependências Python
-
-```bash
-pip install -r src/requirements.txt
-```
+### Passo 2: Instalar Dependências
 
 **Ubuntu/Debian:**
 ```bash
