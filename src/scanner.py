@@ -10,6 +10,7 @@ import os
 
 sys.path.insert(0, str(Path(__file__).parent))
 from report_generator import ReportGenerator
+from tools_scanner import ToolsScanner
 from utils.helpers import (
     print_banner, print_success, print_error, print_info, 
     is_valid_http_url, format_vulnerability_output
@@ -449,7 +450,7 @@ def main():
         sys.exit(1)
     
     target = sys.argv[1]
-    report_format = 'json'  # Formato padrão JSON
+    report_format = 'json'  
     
     if not is_valid_http_url(target):
         print_error(f"URL inválida: {target}")

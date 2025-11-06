@@ -1,235 +1,333 @@
-# Web Security Scanner - Conceito C
+# Web Security Scanner
 
-Ferramenta de varredura de segurança para aplicações web, focada na detecção de vulnerabilidades XSS e SQL Injection.
+Este scanner realiza testes automatizados em aplicações web para detectar vulnerabilidades de segurança. O projeto combina técnicas próprias de detecção com integração de ferramentas profissionais (Nmap, Nikto) para fornecer uma análise completa de segurança.
 
-## 📋 Funcionalidades
+**Características principais:**
+- Detecção de 7 tipos de vulnerabilidades implementadas
+- Integração com ferramentas de mercado (Nmap, Nikto)
+- Interface de linha de comando
+- Interface web com Flask
+- Relatórios em formato JSON
+- Nomenclatura incremental automática de arquivos
 
-- ✅ Varredura simples de URLs e formulários
-- ✅ Detecção de XSS (Cross-Site Scripting)
-- ✅ Detecção de SQL Injection
-- ✅ Interface de linha de comando com cores
-- ✅ Relatórios em múltiplos formatos (TXT, JSON, CSV, Markdown)
-- ✅ Testes unitários automatizados
-- ✅ CI/CD com GitHub Actions
-- ✅ Containerização com Docker
+---
+## Instalação
 
-## 🏗️ Estrutura do Projeto
-
-```
-web-security-scanner/
-├── src/
-│   ├── scanner.py              # Scanner principal
-│   ├── report_generator.py     # Gerador de relatórios
-│   ├── utils/
-│   │   ├── __init__.py
-│   │   └── helpers.py          # Funções auxiliares
-│   └── requirements.txt        # Dependências
-├── tests/
-│   └── test_scanner.py         # Testes unitários
-├── docs/
-│   ├── architecture_diagram.png
-│   └── flowchart.pdf
-├── .github/
-│   └── workflows/
-│       └── security_scan.yml   # GitHub Actions
-├── reports/                     # Relatórios gerados (criado automaticamente)
-├── Dockerfile                   # Container Docker
-└── README.md                    # Este arquivo
-```
-
-## 🔧 Instalação
-
-### Opção 1: Instalação Local
+### Passo 1: Clonar o Repositório
 
 ```bash
-# Clone o repositório
-git clone <seu-repositorio>
+git clone https://github.com/vivsoliveira/seguranca_web.git # para windows
 cd web-security-scanner
-
-# Instale as dependências
-pip install -r requirements.txt
 ```
-
-### Opção 2: Docker
 
 ```bash
-# Build da imagem
-docker build -t web-security-scanner .
-
-# Executar
-docker run --rm web-security-scanner http://testphp.vulnweb.com
+git clone git@github.com:vivsoliveira/seguranca_web.git # para linux
+cd web-security-scanner
 ```
 
-## 🚀 Como Usar
-
-### Uso Básico
+### Passo 2: Instalar Dependências Python
 
 ```bash
-python src/scanner.py <URL_ALVO>
+pip install -r src/requirements.txt
 ```
 
-### Com Formato de Relatório Específico
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install -y nmap nikto
+```
+
+---
+
+## Como Usar
+
+### Modo 1: Interface de Linha de Comando (CLI)
+
+Execução básica:
 
 ```bash
-# Relatório em JSON
-python src/scanner.py http://testphp.vulnweb.com --format json
-
-# Relatório em CSV
-python src/scanner.py http://testphp.vulnweb.com --format csv
-
-# Relatório em Markdown
-python src/scanner.py http://testphp.vulnweb.com --format md
+python3 src/scanner.py <URL>
 ```
 
-### Usando Docker com Volume para Relatórios
+Exemplo:
 
 ```bash
-docker run --rm -v $(pwd)/reports:/app/reports web-security-scanner http://testphp.vulnweb.com
+python3 src/scanner.py http://testphp.vulnweb.com
 ```
 
-## 🧪 Executar Testes
+**Fluxo de execução:**
+
+1. O scanner inicia e exibe o banner
+2. Valida a URL fornecida
+3. Executa testes de segurança:
+   - Verifica headers de segurança
+   - Busca formulários na página
+   - Testa cada formulário para vulnerabilidades
+   - Verifica arquivos sensíveis expostos
+4. Gera relatório JSON automaticamente
+
+### Modo 2: Interface Web
+
+Iniciar servidor web:
 
 ```bash
-# Executar todos os testes
-python tests/test_scanner.py
-
-# Com pytest (mais detalhado)
-pytest tests/ -v
-
-# Com coverage
-pytest tests/ --cov=src --cov-report=html
+python3 src/web_interface.py
 ```
 
-## 📊 Formatos de Relatório
-
-### TXT (Texto)
-Relatório formatado para leitura no terminal
-
-### JSON
-Dados estruturados para integração com outras ferramentas
-
-### CSV
-Formato tabular para análise em Excel/planilhas
-
-### Markdown
-Documentação formatada para GitHub/GitLab
-
-## 📈 Exemplo de Saída
+Acessar no navegador:
 
 ```
-╔═══════════════════════════════════════════════════════╗
-║          Web Security Scanner - Conceito C            ║
-║              Ferramenta de Testes de Segurança        ║
-╚═══════════════════════════════════════════════════════╝
-
-[*] Iniciando varredura em: http://testphp.vulnweb.com
-[*] Hora de início: 2025-10-30 14:30:00
-
-[+] 3 formulário(s) encontrado(s)
-
-[*] Testando formulário 1/3
-
-╔═══════════════════════════════════════════════════════╗
-║ VULNERABILIDADE DETECTADA
-╚═══════════════════════════════════════════════════════╝
-
-Tipo: XSS (Cross-Site Scripting)
-Severidade: MÉDIA
-URL: http://testphp.vulnweb.com/search.php
-Método: GET
-Parâmetro: searchFor
-Payload: <script>alert('XSS')</script>
-
-[+] Varredura concluída!
-[*] Duração: 5.43 segundos
-[*] Total de vulnerabilidades encontradas: 2
-
-[+] Relatório salvo em: reports/report_20251030_143000.txt
+http://localhost:5000
 ```
 
-## 🎯 Vulnerabilidades Detectadas
+### Modo 3: Apenas Ferramentas Externas
 
-### XSS (Cross-Site Scripting)
-- Payloads testados: `<script>`, `<img>`, `javascript:`
-- Detecta reflexão de scripts na resposta
-- Severidade: MÉDIA
+Para executar somente as ferramentas externas (nmap e nikto):
 
-### SQL Injection
-- Payloads testados: `' OR '1'='1`, `UNION SELECT`, etc.
-- Detecta mensagens de erro SQL
-- Severidade: ALTA
-
-## 🔒 Sites para Teste
-
-**IMPORTANTE**: Apenas teste em sites que você tem permissão!
-
-### Sites Vulneráveis Intencionalmente (Legal):
-- http://testphp.vulnweb.com
-- http://www.webscantest.com
-- http://zero.webappsecurity.com
-- https://portswigger.net/web-security (requer cadastro)
-
-### ⚠️ AVISO LEGAL
-Esta ferramenta é **apenas para fins educacionais**. Testar segurança de sites sem autorização é **ilegal**. Use apenas em:
-- Seus próprios sites
-- Ambientes de teste autorizados
-- Sites de prática dedicados
-
-## 🔄 CI/CD Pipeline
-
-O projeto inclui GitHub Actions para:
-- ✅ Execução automática de testes
-- ✅ Verificação de qualidade de código (linting)
-- ✅ Build da imagem Docker
-- ✅ Auditoria de segurança das dependências
-
-## 📦 Dependências
-
-```
-requests>=2.31.0
-beautifulsoup4>=4.12.0
-urllib3>=2.0.0
-colorama>=0.4.6
+```bash
+python3 src/tools_scanner.py <URL>
 ```
 
-## 🚀 Roadmap (Próximas Versões)
+---
 
-### Para Conceito B:
-- [ ] Detecção de CSRF
-- [ ] Detecção de Directory Traversal
-- [ ] Interface web básica
-- [ ] Integração com OWASP ZAP API
+## Relatórios
 
-### Para Conceito A:
-- [ ] Dashboard interativo
-- [ ] Sistema de priorização por severidade
-- [ ] Análise heurística avançada
-- [ ] Autenticação multi-usuário
-- [ ] Banco de dados para histórico
+### Formato JSON
 
-## 📝 Documentação Técnica
+Todos os relatórios são gerados automaticamente em formato JSON na pasta `reports/`.
+Os arquivos seguem o padrão: `{dominio}{numero}.json`
 
-### Arquitetura
-O sistema segue uma arquitetura modular:
+---
 
-1. **Scanner Core** (`scanner.py`): Lógica principal de varredura
-2. **Report Generator** (`report_generator.py`): Geração de relatórios
-3. **Utils** (`utils/`): Funções auxiliares reutilizáveis
-4. **Tests** (`tests/`): Testes automatizados
+## Vulnerabilidades Detectadas
 
-### Metodologia de Testes
+### 1. XSS (Cross-Site Scripting)
 
-1. **Coleta de Formulários**: Identifica todos os forms na página
-2. **Extração de Parâmetros**: Mapeia inputs e métodos HTTP
-3. **Injeção de Payloads**: Testa cada parâmetro com payloads maliciosos
-4. **Análise de Resposta**: Verifica se vulnerabilidade foi explorada
-5. **Geração de Relatório**: Documenta achados
+**Severidade:** MÉDIA
 
-## 👥 Autores
+**Como funciona:**
+- Injeta payloads JavaScript em campos de formulário
+- Verifica se o payload é refletido na resposta sem sanitização
+- Detecta quando inputs aceitam código malicioso
 
-- [Seu Nome] - [Seu Email]
-- [Nome do Colega] - [Email do Colega]
+**Payloads testados:**
+```html
+<script>alert('XSS')</script>
+<img src=x onerror=alert('XSS')>
+javascript:alert('XSS')
+```
 
-**Instituição**: Insper  
-**Curso**: Tecnologias Hackers  
-**Professores**: Rodolfo Avelino e João Eduardo
+**Impacto:**
+Permite que atacantes executem código JavaScript no navegador de outros usuários, possibilitando roubo de sessões, redirecionamentos maliciosos e manipulação de conteúdo.
+
+---
+
+### 2. SQL Injection
+
+**Severidade:** ALTA
+
+**Como funciona:**
+- Injeta payloads SQL em campos de formulário
+- Detecta mensagens de erro SQL na resposta
+- Identifica quando queries SQL são executadas sem sanitização
+
+**Payloads testados:**
+```sql
+' OR '1'='1
+' OR 1=1--
+admin' --
+' UNION SELECT NULL--
+```
+
+**Erros detectados:**
+- sql syntax
+- mysql_fetch
+- you have an error in your sql
+- warning: mysql
+- unclosed quotation mark
+
+**Impacto:**
+Permite acesso não autorizado ao banco de dados, podendo resultar em vazamento de dados, modificação de registros ou até controle total do banco.
+
+---
+
+### 3. CSRF (Cross-Site Request Forgery)
+
+**Severidade:** MÉDIA
+
+**Como funciona:**
+- Verifica se formulários POST possuem tokens CSRF
+- Detecta ausência de proteção contra requisições forjadas
+- Analisa presença de tokens como: csrf, token, _token, csrf_token, authenticity_token
+
+**Impacto:**
+Permite que atacantes executem ações em nome de usuários autenticados sem seu conhecimento ou consentimento.
+
+---
+
+### 4. Path Traversal / Directory Traversal
+
+**Severidade:** ALTA
+
+**Como funciona:**
+- Tenta acessar arquivos do sistema através de inputs
+- Injeta sequências de navegação de diretórios
+- Detecta se arquivos sensíveis são expostos
+
+**Payloads testados:**
+```
+../../../etc/passwd
+..\..\..\..\windows\win.ini
+....//....//....//etc/passwd
+..%2F..%2F..%2Fetc%2Fpasswd
+```
+
+**Indicadores de sucesso:**
+- Conteúdo de /etc/passwd (Linux)
+- Conteúdo de win.ini (Windows)
+- Presença de: root:x:, [extensions], bin/bash
+
+**Impacto:**
+Permite acesso a arquivos do sistema operacional, podendo expor configurações sensíveis, senhas e informações críticas.
+
+---
+
+### 5. File Inclusion (LFI/RFI)
+
+**Severidade:** ALTA
+
+**Como funciona:**
+- Testa Local File Inclusion (inclusão de arquivos locais)
+- Testa Remote File Inclusion (inclusão de arquivos remotos)
+- Verifica se a aplicação permite incluir arquivos arbitrários
+
+**Payloads LFI testados:**
+```
+../../../../etc/passwd
+/etc/passwd
+C:\windows\system32\drivers\etc\hosts
+php://filter/convert.base64-encode/resource=index.php
+```
+
+**Indicadores de sucesso:**
+- root:x:
+- daemon:
+- <?php
+- # localhost
+
+**Impacto:**
+Permite execução de código arbitrário, leitura de arquivos sensíveis e potencial controle total da aplicação.
+
+---
+
+### 6. Sensitive Data Exposure
+
+**Severidade:** ALTA/MÉDIA
+
+**Como funciona:**
+- Tenta acessar arquivos sensíveis comuns
+- Verifica presença de informações confidenciais expostas
+- Detecta configurações e backups acessíveis
+
+**Arquivos testados:**
+```
+/.env
+/config.php
+/wp-config.php
+/database.yml
+/.git/config
+/backup.sql
+/phpinfo.php
+/admin
+/robots.txt
+/.DS_Store
+```
+
+**Padrões sensíveis detectados:**
+- password
+- api_key
+- secret
+- db_password
+- mysql, postgres, mongodb
+- aws_access
+- private_key
+
+**Impacto:**
+Expõe credenciais, chaves de API, configurações de banco de dados e outras informações críticas que podem facilitar ataques mais graves.
+
+---
+
+### 7. Insecure Headers
+
+**Severidade:** BAIXA
+
+**Como funciona:**
+- Verifica presença de headers de segurança HTTP
+- Identifica headers ausentes que protegem contra ataques
+
+**Headers verificados:**
+- X-Frame-Options (proteção contra Clickjacking)
+- X-Content-Type-Options (proteção contra MIME sniffing)
+- Strict-Transport-Security (força uso de HTTPS)
+- Content-Security-Policy (proteção contra XSS)
+- X-XSS-Protection (filtro XSS do navegador)
+
+**Impacto:**
+Facilita diversos tipos de ataques como Clickjacking, MIME sniffing e XSS quando headers apropriados não são configurados.
+
+---
+
+## Ferramentas Externas Integradas
+
+### Nmap
+
+**O que detecta:**
+- Portas abertas e serviços expostos
+- CVEs conhecidas (vulnerabilidades catalogadas)
+- Versões de software desatualizadas
+- Vulnerabilidades através de scripts NSE
+
+**Tempo de execução:** Medio
+
+---
+
+### Nikto
+
+**O que detecta:**
+- Arquivos e diretórios perigosos expostos
+- Configurações inseguras do servidor
+- Headers ausentes ou mal configurados
+- Backdoors e shells conhecidos
+- Métodos HTTP perigosos habilitados
+
+**Tempo de execução:** Longo
+
+**Exemplo de detecção:**
+- /admin/ directory indexing enabled
+- Server allows TRACE method
+- Outdated Apache version detected
+- Missing security headers
+
+---
+
+## Executando Testes Unitários -- verficação da funcionalidade dos testes
+
+```bash
+python3 src/tests/test_scanner.py
+```
+
+É esperado que todos os testes passem sem erros.
+
+---
+
+### Erro: "URL inválida"
+
+Certifique-se que a URL começa com http:// ou https://
+
+```bash
+# Incorreto
+python3 src/scanner.py example.com
+
+# Correto
+python3 src/scanner.py http://example.com
+```

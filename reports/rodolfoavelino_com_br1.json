@@ -1,0 +1,32 @@
+{
+  "scan_info": {
+    "target_url": "https://www.rodolfoavelino.com.br/",
+    "timestamp": "2025-11-06T16:04:54.810683",
+    "scan_duration": 81.90806317329407,
+    "total_vulnerabilities": 1
+  },
+  "vulnerabilities": [
+    {
+      "type": "Insecure Headers",
+      "severity": "BAIXA",
+      "url": "https://www.rodolfoavelino.com.br/",
+      "method": "GET",
+      "payload": "N/A",
+      "parameter": "X-Frame-Options (Proteção contra Clickjacking), X-Content-Type-Options (Proteção contra MIME sniffing), Strict-Transport-Security (Força uso de HTTPS), Content-Security-Policy (Proteção contra XSS), X-XSS-Protection (Filtro XSS do navegador)"
+    }
+  ],
+  "summary": {
+    "tests_performed": [
+      "XSS",
+      "SQL Injection",
+      "CSRF",
+      "Path Traversal",
+      "File Inclusion",
+      "Sensitive Data Exposure",
+      "Insecure Headers"
+    ],
+    "severity_count": {
+      "BAIXA": 1
+    }
+  }
+}
