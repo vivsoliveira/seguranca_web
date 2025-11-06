@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Security Scanner</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .status.scanning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            display: block;
+        }
+        .status.completed {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            display: block;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #dc3545;
+            display: block;
+        }
+        .results {
+            display: none;
+        }
+        .results.show {
+            display: block;
+        }
+        .vulnerability {
+            padding: 15px;
+            border-left: 4px solid;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .vulnerability.ALTA {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        .vulnerability.MÉDIA {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        .vulnerability.BAIXA {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+        }
+        .vulnerability h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .vulnerability p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .summary-card h3 {
+            font-size: 2em;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        .summary-card p {
+            color: #666;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Web Security Scanner</h1>
+            <p>Ferramenta de Análise de Vulnerabilidades Web criada por Victória de Oliveira Farias</p>
+        </div>
+
+        <div class="card">
+            <div class="input-group">
+                <input type="text" id="urlInput" placeholder="Digite a URL (ex: http://testphp.vulnweb.com)" 
+                       value="http://testphp.vulnweb.com">
+                <button onclick="startScan()" id="scanBtn">Iniciar Varredura</button>
+            </div>
+
+            <div id="statusDiv" class="status">
+                <p id="statusText"></p>
+            </div>
+        </div>
+
+        <div id="resultsDiv" class="results">
+            <div class="card">
+                <h2>Resumo da Varredura</h2>
+                <div class="summary" id="summaryDiv"></div>
+            </div>
+
+            <div class="card">
+                <h2>Vulnerabilidades Encontradas</h2>
+                <div id="vulnerabilitiesDiv"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentScanId = null;
+
+        async function startScan() {
+            const url = document.getElementById('urlInput').value;
+            const scanBtn = document.getElementById('scanBtn');
+            const statusDiv = document.getElementById('statusDiv');
+            const statusText = document.getElementById('statusText');
+            const resultsDiv = document.getElementById('resultsDiv');
+
+            if (!url) {
+                alert('Por favor, insira uma URL');
+                return;
+            }
+
+            scanBtn.disabled = true;
+            statusDiv.className = 'status scanning';
+            statusText.innerHTML = '<div class="spinner"></div><p>Iniciando varredura...</p>';
+            resultsDiv.classList.remove('show');
+
+            try {
+                const response = await fetch('/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+                currentScanId = data.scan_id;
+
+                checkStatus();
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusText.textContent = 'Erro ao iniciar varredura: ' + error.message;
+                scanBtn.disabled = false;
+            }
+        }
+
+        async function checkStatus() {
+            try {
+                const response = await fetch(`/status/${currentScanId}`);
+                const data = await response.json();
+
+                const statusDiv = document.getElementById('statusDiv');
+                const statusText = document.getElementById('statusText');
+                const scanBtn = document.getElementById('scanBtn');
+
+                if (data.status === 'scanning') {
+                    statusText.innerHTML = '<div class="spinner"></div><p>Varrendo ' + data.url + '...</p>';
+                    setTimeout(checkStatus, 2000);
+                } else if (data.status === 'completed') {
+                    statusDiv.className = 'status completed';
+                    statusText.textContent = 'Varredura concluída! Relatório salvo em: ' + data.filepath;
+                    scanBtn.disabled = false;
+                    displayResults(data.report);
+                } else if (data.status === 'error') {
+                    statusDiv.className = 'status error';
+                    statusText.textContent = 'Erro: ' + data.error;
+                    scanBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Erro ao verificar status:', error);
+                setTimeout(checkStatus, 2000);
+            }
+        }
+
+        function displayResults(report) {
+            const resultsDiv = document.getElementById('resultsDiv');
+            const summaryDiv = document.getElementById('summaryDiv');
+            const vulnerabilitiesDiv = document.getElementById('vulnerabilitiesDiv');
+
+            summaryDiv.innerHTML = `
+                <div class="summary-card">
+                    <h3>${report.scan_info.total_vulnerabilities}</h3>
+                    <p>Vulnerabilidades</p>
+                </div>
+                <div class="summary-card">
+                    <h3>${report.summary.severity_count.ALTA || 0}</h3>
+                    <p>Alta Severidade</p>
+                </div>
+                <div class="summary-card">
+                    <h3>${report.summary.severity_count.MÉDIA || 0}</h3>
+                    <p>Média Severidade</p>
+                </div>
+                <div class="summary-card">
+                    <h3>${report.summary.severity_count.BAIXA || 0}</h3>
+                    <p>Baixa Severidade</p>
+                </div>
+            `;
+
+            if (report.vulnerabilities.length === 0) {
+                vulnerabilitiesDiv.innerHTML = '<p style="text-align: center; color: #28a745;">Nenhuma vulnerabilidade encontrada!</p>';
+            } else {
+                vulnerabilitiesDiv.innerHTML = report.vulnerabilities.map(vuln => `
+                    <div class="vulnerability ${vuln.severity}">
+                        <h3>${vuln.type}</h3>
+                        <p><strong>Severidade:</strong> ${vuln.severity}</p>
+                        <p><strong>URL:</strong> ${vuln.url}</p>
+                        <p><strong>Método:</strong> ${vuln.method}</p>
+                        <p><strong>Parâmetro:</strong> ${vuln.parameter}</p>
+                        <p><strong>Payload:</strong> <code>${vuln.payload}</code></p>
+                        ${vuln.error ? `<p><strong>Erro:</strong> ${vuln.error}</p>` : ''}
+                        ${vuln.details ? `<p><strong>Detalhes:</strong> ${vuln.details}</p>` : ''}
+                    </div>
+                `).join('');
+            }
+
+            resultsDiv.classList.add('show');
+        }
+    </script>
+</body>
+</html>
