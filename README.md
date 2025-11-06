@@ -84,6 +84,11 @@ Para executar somente as ferramentas externas (nmap e nikto):
 python3 src/tools_scanner.py <URL>
 ```
 
+Exemplo:
+
+```bash
+python3 src/tools_scanner.py http://testphp.vulnweb.com
+```
 ---
 
 ## Relatórios
