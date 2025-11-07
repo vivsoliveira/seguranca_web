@@ -36,15 +36,16 @@ class ToolsScanner:
             return False
     
     def scan_with_nmap(self):
-        """Escaneia portas e serviços com Nmap"""
-        print("[*] Executando Nmap...")
+        """Escaneia portas e serviços com Nmap (versão otimizada)"""
+        print("[*] Executando Nmap (scan rápido)...")
         
         try:
+            # Scan otimizado: apenas top 100 portas, sem scripts pesados
             result = subprocess.run(
-                ['nmap', '-sV', '-sC', '--script=vuln', self.host, '-oX', '-'],
+                ['nmap', '-F', '-sV', '--version-intensity', '2', self.host],
                 capture_output=True,
                 text=True,
-                timeout=300
+                timeout=120  # 2 minutos max
             )
             
             if result.returncode == 0:
@@ -58,109 +59,144 @@ class ToolsScanner:
             print("[!] Nmap não instalado")
             return False
         except subprocess.TimeoutExpired:
-            print("[!] Nmap timeout")
+            print("[!] Nmap timeout (mais de 2 minutos)")
             return False
     
     def _parse_nmap_output(self, output):
-        """Parseia saída XML do Nmap"""
-        if 'VULNERABLE' in output or 'CVE-' in output:
-            cve_pattern = r'CVE-\d{4}-\d+'
-            cves = re.findall(cve_pattern, output)
-            
-            if cves:
+        """Parseia saída texto do Nmap"""
+        lines = output.split('\n')
+        open_ports = []
+        
+        # Procura por portas abertas
+        for line in lines:
+            if '/tcp' in line and 'open' in line:
+                match = re.search(r'(\d+)/tcp\s+open\s+(\S+)', line)
+                if match:
+                    port = match.group(1)
+                    service = match.group(2)
+                    open_ports.append(f"{port}/{service}")
+        
+        if open_ports:
+            # Registra portas abertas como vulnerabilidade de informação
+            severity = "MÉDIA" if len(open_ports) > 10 else "BAIXA"
+            vuln = {
+                "type": "Exposed Services (Nmap)",
+                "severity": severity,
+                "url": self.target_url,
+                "method": "NMAP",
+                "parameter": f"{len(open_ports)} portas abertas",
+                "payload": "N/A",
+                "details": f"Serviços: {', '.join(open_ports[:10])}",
+                "tool": "nmap"
+            }
+            self.vulnerabilities.append(vuln)
+        
+        # Procura por versões específicas conhecidas como vulneráveis
+        vulnerable_versions = {
+            'Apache/2.2': 'Apache 2.2 (fim de suporte)',
+            'Apache/2.0': 'Apache 2.0 (fim de suporte)',
+            'nginx/1.0': 'Nginx 1.0 (desatualizado)',
+            'OpenSSH 5': 'OpenSSH 5.x (vulnerável)',
+            'OpenSSH 6': 'OpenSSH 6.x (vulnerável)',
+        }
+        
+        for pattern, description in vulnerable_versions.items():
+            if pattern in output:
                 vuln = {
-                    "type": "Known Vulnerabilities (Nmap)",
+                    "type": "Outdated Service Version (Nmap)",
                     "severity": "ALTA",
                     "url": self.target_url,
                     "method": "NMAP",
-                    "parameter": f"CVEs encontradas: {', '.join(set(cves))}",
+                    "parameter": description,
                     "payload": "N/A",
                     "tool": "nmap"
                 }
                 self.vulnerabilities.append(vuln)
-        
-        if '<port protocol="tcp" portid="' in output:
-            open_ports = re.findall(r'portid="(\d+)".*?state="open"', output)
-            if len(open_ports) > 10:
-                vuln = {
-                    "type": "Too Many Open Ports",
-                    "severity": "MÉDIA",
-                    "url": self.target_url,
-                    "method": "NMAP",
-                    "parameter": f"{len(open_ports)} portas abertas",
-                    "payload": "N/A",
-                    "details": f"Portas: {', '.join(open_ports[:10])}...",
-                    "tool": "nmap"
-                }
-                self.vulnerabilities.append(vuln)
+                break
     
     def scan_with_nikto(self):
-        """Escaneia vulnerabilidades web com Nikto"""
-        print("[*] Executando Nikto...")
+        """Escaneia vulnerabilidades web com Nikto (versão otimizada)"""
+        print("[*] Executando Nikto (scan básico)...")
         
         try:
+            # Scan otimizado: apenas testes básicos e rápidos
             result = subprocess.run(
-                ['nikto', '-h', self.target_url, '-Format', 'json', '-output', '-'],
+                ['nikto', '-h', self.target_url, '-Tuning', '1234', '-timeout', '10'],
                 capture_output=True,
                 text=True,
-                timeout=600
+                timeout=300  # 5 minutos max
             )
             
-            if result.returncode == 0 or result.stdout:
+            # Nikto pode retornar código de erro mas ter output válido
+            if result.stdout:
                 self._parse_nikto_output(result.stdout)
                 return True
             else:
-                print(f"[!] Nikto falhou: {result.stderr}")
+                print(f"[!] Nikto não retornou resultados")
                 return False
                 
         except FileNotFoundError:
             print("[!] Nikto não instalado")
             return False
         except subprocess.TimeoutExpired:
-            print("[!] Nikto timeout")
+            print("[!] Nikto timeout (mais de 5 minutos)")
             return False
     
     def _parse_nikto_output(self, output):
-        """Parseia saída JSON do Nikto"""
-        try:
-            data = json.loads(output)
+        """Parseia saída texto do Nikto"""
+        lines = output.split('\n')
+        findings = []
+        
+        for line in lines:
+            line = line.strip()
             
-            if 'vulnerabilities' in data:
-                for vuln_data in data['vulnerabilities']:
-                    severity = self._map_nikto_severity(vuln_data.get('OSVDB', ''))
-                    
-                    vuln = {
-                        "type": f"Nikto: {vuln_data.get('msg', 'Unknown')}",
-                        "severity": severity,
-                        "url": vuln_data.get('url', self.target_url),
-                        "method": vuln_data.get('method', 'GET'),
-                        "parameter": vuln_data.get('uri', 'N/A'),
-                        "payload": "N/A",
-                        "tool": "nikto"
-                    }
-                    self.vulnerabilities.append(vuln)
-                    
-        except json.JSONDecodeError:
-            lines = output.split('\n')
-            for line in lines:
-                if '+ OSVDB-' in line or 'WARNING:' in line:
-                    vuln = {
-                        "type": "Nikto Finding",
-                        "severity": "MÉDIA",
-                        "url": self.target_url,
-                        "method": "NIKTO",
-                        "parameter": line.strip()[:100],
-                        "payload": "N/A",
-                        "tool": "nikto"
-                    }
-                    self.vulnerabilities.append(vuln)
-    
-    def _map_nikto_severity(self, osvdb):
-        """Mapeia OSVDB para severidade"""
-        if not osvdb:
-            return "MÉDIA"
-        return "ALTA"
-    
+            # Pula linhas vazias e cabeçalhos
+            if not line or line.startswith('-') or line.startswith('='):
+                continue
+            
+            # Procura por linhas que começam com '+'
+            if line.startswith('+ '):
+                finding = line[2:].strip()  # Remove o '+ '
+                
+                # Filtra linhas informativas irrelevantes
+                skip_patterns = [
+                    'Target IP:',
+                    'Target Hostname:',
+                    'Target Port:',
+                    'Start Time:',
+                    'Server:',
+                    'retrieved x-powered-by header',
+                    'No CGI Directories found',
+                ]
+                
+                should_skip = False
+                for pattern in skip_patterns:
+                    if pattern.lower() in finding.lower():
+                        should_skip = True
+                        break
+                
+                if not should_skip and len(finding) > 20:  # Apenas achados com conteúdo
+                    findings.append(finding)
+        
+        # Registra achados como vulnerabilidades
+        for finding in findings:
+            # Determina severidade baseada em palavras-chave
+            severity = "MÉDIA"
+            if any(word in finding.lower() for word in ['vulnerable', 'exploit', 'critical', 'high', 'injection']):
+                severity = "ALTA"
+            elif any(word in finding.lower() for word in ['information', 'disclosure', 'version', 'banner']):
+                severity = "BAIXA"
+            
+            vuln = {
+                "type": "Nikto Finding",
+                "severity": severity,
+                "url": self.target_url,
+                "method": "NIKTO",
+                "parameter": finding[:150],  # Limita tamanho
+                "payload": "N/A",
+                "tool": "nikto"
+            }
+            self.vulnerabilities.append(vuln)
     
     def run_all_scans(self):
         """Executa todas as ferramentas disponíveis"""
@@ -178,6 +214,7 @@ class ToolsScanner:
             return False
         
         print(f"\n[*] Iniciando varredura com ferramentas externas...")
+        print("[i] Isso pode levar alguns minutos...\n")
         
         if tools['nmap']:
             self.scan_with_nmap()
@@ -203,3 +240,5 @@ if __name__ == "__main__":
     print(f"\n[*] Vulnerabilidades encontradas:")
     for vuln in scanner.vulnerabilities:
         print(f"  - {vuln['type']} ({vuln['severity']})")
+        if 'details' in vuln:
+            print(f"    Detalhes: {vuln['details']}")
