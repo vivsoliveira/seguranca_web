@@ -1,33 +1,33 @@
 # Web Security Scanner
 
-Este scanner realiza testes automatizados em aplicações web para detectar vulnerabilidades de segurança. O projeto combina técnicas próprias de detecção com integração de ferramentas profissionais (Nmap, Nikto) para fornecer uma análise completa de segurança.
+Este scanner implementa uma solução automatizada para análise de vulnerabilidades em aplicações web. O sistema integra técnicas proprietárias de detecção com ferramentas profissionais consolidadas (Nmap, Nikto), proporcionando uma avaliação abrangente da superfície de ataque.
 
 **Características principais:**
-- Detecção de 7 tipos de vulnerabilidades implementadas
-- Integração com ferramentas de mercado (Nmap, Nikto)
-- Interface de linha de comando
-- Interface web com Flask
-- Relatórios em formato JSON
-- Nomenclatura incremental automática de arquivos
+- Implementação de 7 categorias de testes de penetração
+- Integração nativa com ferramentas de análise de segurança (Nmap, Nikto)
+- Interface CLI (Command Line Interface)
+- Interface web implementada com framework Flask
+- Geração de relatórios estruturados em formato JSON
+- Sistema automatizado de nomenclatura incremental para artefatos de saída
 
 ---
 ## Instalação
 
-### Passo 1: Clonar o Repositório
+### Passo 1: Clonagem do Repositório
 
 ```bash
-git clone https://github.com/vivsoliveira/seguranca_web.git # para windows
+git clone https://github.com/vivsoliveira/seguranca_web.git # Windows
 cd web-security-scanner
 ```
 
 ```bash
-git clone git@github.com:vivsoliveira/seguranca_web.git # para linux
+git clone git@github.com:vivsoliveira/seguranca_web.git # Linux/Unix
 cd web-security-scanner
 ```
 
-### Passo 2: Instalar Dependências
+### Passo 2: Instalação de Dependências
 
-**Linux:**
+**Linux/Unix:**
 ```bash
 sudo apt update
 sudo apt install -y nmap nikto
@@ -35,56 +35,56 @@ sudo apt install -y nmap nikto
 
 ---
 
-## Como Usar
+## Utilização
 
 ### Modo 1: Interface de Linha de Comando (CLI)
 
-Execução básica:
+Sintaxe básica:
 
 ```bash
 python3 src/scanner.py <URL>
 ```
 
-Exemplo:
+Exemplo de execução:
 
 ```bash
 python3 src/scanner.py http://testphp.vulnweb.com
 ```
 
-**Fluxo de execução:**
+**Fluxo operacional:**
 
-1. O scanner inicia e exibe o banner
-2. Valida a URL fornecida
-3. Executa testes de segurança:
-   - Verifica headers de segurança
-   - Busca formulários na página
-   - Testa cada formulário para vulnerabilidades
-   - Verifica arquivos sensíveis expostos
-4. Gera relatório JSON automaticamente
+1. Inicialização do scanner e exibição do banner informativo
+2. Validação e parsing da URL fornecida
+3. Execução sequencial dos testes de segurança:
+   - Análise de headers de segurança HTTP
+   - Enumeração de formulários na página-alvo
+   - Teste de vulnerabilidades em cada formulário identificado
+   - Verificação de exposição de arquivos sensíveis
+4. Geração automática de relatório estruturado em JSON
 
 ### Modo 2: Interface Web
 
-Iniciar servidor web:
+Inicialização do servidor web:
 
 ```bash
 python3 src/interface.py
 ```
 
-Acessar no navegador:
+Acesso via navegador:
 
 ```
 http://localhost:5000
 ```
 
-### Modo 3: Apenas Ferramentas Externas
+### Modo 3: Execução Isolada de Ferramentas Externas
 
-Para executar somente as ferramentas externas (nmap e nikto):
+Execução exclusiva das ferramentas de terceiros (Nmap e Nikto):
 
 ```bash
 python3 src/tools_scanner.py <URL>
 ```
 
-Exemplo:
+Exemplo de utilização:
 
 ```bash
 python3 src/tools_scanner.py http://testphp.vulnweb.com
@@ -93,46 +93,46 @@ python3 src/tools_scanner.py http://testphp.vulnweb.com
 
 ## Relatórios
 
-### Formato JSON
+### Estrutura dos Artefatos de Saída
 
-Todos os relatórios são gerados automaticamente em formato JSON na pasta `reports/`.
-Os arquivos seguem o padrão: `{dominio}{numero}.json`
+Todos os relatórios são gerados automaticamente em formato JSON no diretório `reports/`.
+A nomenclatura dos arquivos segue o padrão: `{dominio}{numero_sequencial}.json`
 
 ---
 
-## Vulnerabilidades Detectadas
+## Taxonomia de Vulnerabilidades Detectadas
 
-### 1. XSS (Cross-Site Scripting)
+### 1. Cross-Site Scripting (XSS)
 
-**Severidade:** MÉDIA
+**Classificação de Severidade:** MÉDIA
 
-**Como funciona:**
-- Injeta payloads JavaScript em campos de formulário
-- Verifica se o payload é refletido na resposta sem sanitização
-- Detecta quando inputs aceitam código malicioso
+**Metodologia de Detecção:**
+- Injeção de payloads JavaScript em campos de entrada de formulários
+- Análise da resposta HTTP para identificar reflexão não-sanitizada do payload
+- Detecção de ausência de encoding/escaping de caracteres especiais
 
-**Payloads testados:**
+**Vetores de Ataque Testados:**
 ```html
 <script>alert('XSS')</script>
 <img src=x onerror=alert('XSS')>
 javascript:alert('XSS')
 ```
 
-**Impacto:**
-Permite que atacantes executem código JavaScript no navegador de outros usuários, possibilitando roubo de sessões, redirecionamentos maliciosos e manipulação de conteúdo.
+**Análise de Impacto:**
+Exploração permite execução arbitrária de código JavaScript no contexto do navegador da vítima, possibilitando sequestro de sessões (session hijacking), redirecionamento para domínios maliciosos e manipulação do DOM (Document Object Model).
 
 ---
 
-### 2. SQL Injection
+### 2. SQL Injection (SQLi)
 
-**Severidade:** ALTA
+**Classificação de Severidade:** ALTA
 
-**Como funciona:**
-- Injeta payloads SQL em campos de formulário
-- Detecta mensagens de erro SQL na resposta
-- Identifica quando queries SQL são executadas sem sanitização
+**Metodologia de Detecção:**
+- Injeção de payloads SQL em parâmetros de entrada
+- Análise de mensagens de erro SGBD (Sistema Gerenciador de Banco de Dados) na resposta
+- Identificação de execução de queries SQL sem parametrização adequada
 
-**Payloads testados:**
+**Vetores de Ataque Testados:**
 ```sql
 ' OR '1'='1
 ' OR 1=1--
@@ -140,42 +140,42 @@ admin' --
 ' UNION SELECT NULL--
 ```
 
-**Erros detectados:**
+**Assinaturas de Erro Detectadas:**
 - sql syntax
 - mysql_fetch
 - you have an error in your sql
 - warning: mysql
 - unclosed quotation mark
 
-**Impacto:**
-Permite acesso não autorizado ao banco de dados, podendo resultar em vazamento de dados, modificação de registros ou até controle total do banco.
+**Análise de Impacto:**
+Exploração permite acesso não-autorizado ao banco de dados, podendo resultar em exfiltração de dados sensíveis, modificação de registros, bypass de autenticação ou comprometimento total do SGBD através de escalação de privilégios.
 
 ---
 
-### 3. CSRF (Cross-Site Request Forgery)
+### 3. Cross-Site Request Forgery (CSRF)
 
-**Severidade:** MÉDIA
+**Classificação de Severidade:** MÉDIA
 
-**Como funciona:**
-- Verifica se formulários POST possuem tokens CSRF
-- Detecta ausência de proteção contra requisições forjadas
-- Analisa presença de tokens como: csrf, token, _token, csrf_token, authenticity_token
+**Metodologia de Detecção:**
+- Verificação da presença de tokens anti-CSRF em formulários com método POST
+- Análise de mecanismos de proteção contra requisições forjadas
+- Busca por tokens de validação: csrf, token, _token, csrf_token, authenticity_token
 
-**Impacto:**
-Permite que atacantes executem ações em nome de usuários autenticados sem seu conhecimento ou consentimento.
+**Análise de Impacto:**
+Exploração permite que atacantes executem ações state-changing em nome de usuários autenticados sem seu consentimento explícito, possibilitando modificação de dados, transações não-autorizadas e comprometimento de integridade.
 
 ---
 
 ### 4. Path Traversal / Directory Traversal
 
-**Severidade:** ALTA
+**Classificação de Severidade:** ALTA
 
-**Como funciona:**
-- Tenta acessar arquivos do sistema através de inputs
-- Injeta sequências de navegação de diretórios
-- Detecta se arquivos sensíveis são expostos
+**Metodologia de Detecção:**
+- Tentativa de acesso a recursos do sistema de arquivos através de parâmetros de entrada
+- Injeção de sequências de navegação hierárquica de diretórios
+- Análise da resposta para identificar exposição de arquivos sensíveis do sistema operacional
 
-**Payloads testados:**
+**Vetores de Ataque Testados:**
 ```
 ../../../etc/passwd
 ..\..\..\..\windows\win.ini
@@ -183,26 +183,26 @@ Permite que atacantes executem ações em nome de usuários autenticados sem seu
 ..%2F..%2F..%2Fetc%2Fpasswd
 ```
 
-**Indicadores de sucesso:**
-- Conteúdo de /etc/passwd (Linux)
-- Conteúdo de win.ini (Windows)
-- Presença de: root:x:, [extensions], bin/bash
+**Indicadores de Exploração Bem-Sucedida:**
+- Conteúdo do arquivo /etc/passwd (sistemas Unix/Linux)
+- Conteúdo do arquivo win.ini (sistemas Windows)
+- Presença de padrões: root:x:, [extensions], bin/bash
 
-**Impacto:**
-Permite acesso a arquivos do sistema operacional, podendo expor configurações sensíveis, senhas e informações críticas.
+**Análise de Impacto:**
+Exploração permite acesso arbitrário ao sistema de arquivos, possibilitando leitura de arquivos de configuração, exposição de credenciais, vazamento de código-fonte e potencial escalação de privilégios.
 
 ---
 
 ### 5. File Inclusion (LFI/RFI)
 
-**Severidade:** ALTA
+**Classificação de Severidade:** ALTA
 
-**Como funciona:**
-- Testa Local File Inclusion (inclusão de arquivos locais)
-- Testa Remote File Inclusion (inclusão de arquivos remotos)
-- Verifica se a aplicação permite incluir arquivos arbitrários
+**Metodologia de Detecção:**
+- Teste de Local File Inclusion (inclusão de arquivos locais do servidor)
+- Teste de Remote File Inclusion (inclusão de arquivos de servidores remotos)
+- Análise da capacidade da aplicação de processar arquivos arbitrários
 
-**Payloads LFI testados:**
+**Vetores de Ataque LFI Testados:**
 ```
 ../../../../etc/passwd
 /etc/passwd
@@ -210,27 +210,27 @@ C:\windows\system32\drivers\etc\hosts
 php://filter/convert.base64-encode/resource=index.php
 ```
 
-**Indicadores de sucesso:**
+**Indicadores de Exploração Bem-Sucedida:**
 - root:x:
 - daemon:
 - <?php
 - # localhost
 
-**Impacto:**
-Permite execução de código arbitrário, leitura de arquivos sensíveis e potencial controle total da aplicação.
+**Análise de Impacto:**
+Exploração permite execução remota de código arbitrário (RCE), leitura de arquivos sensíveis do sistema, possível comprometimento total da aplicação e do servidor subjacente.
 
 ---
 
 ### 6. Sensitive Data Exposure
 
-**Severidade:** ALTA/MÉDIA
+**Classificação de Severidade:** ALTA/MÉDIA
 
-**Como funciona:**
-- Tenta acessar arquivos sensíveis comuns
-- Verifica presença de informações confidenciais expostas
-- Detecta configurações e backups acessíveis
+**Metodologia de Detecção:**
+- Enumeração de caminhos comuns para arquivos sensíveis
+- Análise da resposta HTTP para identificar exposição de informações confidenciais
+- Detecção de arquivos de configuração, backups e repositórios acessíveis publicamente
 
-**Arquivos testados:**
+**Recursos Testados:**
 ```
 /.env
 /config.php
@@ -244,7 +244,7 @@ Permite execução de código arbitrário, leitura de arquivos sensíveis e pote
 /.DS_Store
 ```
 
-**Padrões sensíveis detectados:**
+**Padrões Sensíveis Identificados:**
 - password
 - api_key
 - secret
@@ -253,82 +253,93 @@ Permite execução de código arbitrário, leitura de arquivos sensíveis e pote
 - aws_access
 - private_key
 
-**Impacto:**
-Expõe credenciais, chaves de API, configurações de banco de dados e outras informações críticas que podem facilitar ataques mais graves.
+**Análise de Impacto:**
+Exposição de credenciais de acesso, chaves de API, strings de conexão de banco de dados e outras informações críticas que facilitam vetores de ataque subsequentes de maior severidade.
 
 ---
 
-### 7. Insecure Headers
+### 7. Insecure HTTP Headers
 
-**Severidade:** BAIXA
+**Classificação de Severidade:** BAIXA
 
-**Como funciona:**
-- Verifica presença de headers de segurança HTTP
-- Identifica headers ausentes que protegem contra ataques
+**Metodologia de Detecção:**
+- Análise de headers de resposta HTTP
+- Identificação de ausência de headers de segurança recomendados
+- Verificação de conformidade com best practices de hardening HTTP
 
-**Headers verificados:**
-- X-Frame-Options (proteção contra Clickjacking)
-- X-Content-Type-Options (proteção contra MIME sniffing)
-- Strict-Transport-Security (força uso de HTTPS)
-- Content-Security-Policy (proteção contra XSS)
-- X-XSS-Protection (filtro XSS do navegador)
+**Headers de Segurança Analisados:**
+- X-Frame-Options (mitigação de ataques de Clickjacking)
+- X-Content-Type-Options (prevenção de MIME type sniffing)
+- Strict-Transport-Security (HSTS - aplicação forçada de HTTPS)
+- Content-Security-Policy (CSP - mitigação de XSS e injeção de dados)
+- X-XSS-Protection (ativação de filtros XSS do navegador)
 
-**Impacto:**
-Facilita diversos tipos de ataques como Clickjacking, MIME sniffing e XSS quando headers apropriados não são configurados.
+**Análise de Impacto:**
+Ausência de headers apropriados facilita múltiplos vetores de ataque incluindo Clickjacking, MIME confusion attacks, downgrade de protocolo e Cross-Site Scripting quando mecanismos de defesa em profundidade não são implementados.
 
 ---
 
 ## Ferramentas Externas Integradas
 
-### Nmap
+### Nmap (Network Mapper)
 
-**O que detecta:**
-- Portas abertas e serviços expostos
-- CVEs conhecidas (vulnerabilidades catalogadas)
-- Versões de software desatualizadas
-- Vulnerabilidades através de scripts NSE
+**Capacidades de Detecção:**
+- Enumeração de portas TCP/UDP abertas e serviços associados
+- Identificação de CVEs (Common Vulnerabilities and Exposures) conhecidas
+- Detecção de versões de software desatualizadas
+- Execução de scripts NSE (Nmap Scripting Engine) para testes especializados
 
-**Tempo de execução:** Medio
+**Complexidade Temporal:** Média
 
 ---
 
 ### Nikto
 
-**O que detecta:**
-- Arquivos e diretórios perigosos expostos
-- Configurações inseguras do servidor
-- Headers ausentes ou mal configurados
-- Backdoors e shells conhecidos
-- Métodos HTTP perigosos habilitados
+**Capacidades de Detecção:**
+- Enumeração de recursos e diretórios potencialmente perigosos
+- Identificação de configurações inseguras do servidor web
+- Análise de headers HTTP ausentes ou mal-configurados
+- Detecção de backdoors e web shells conhecidos
+- Verificação de métodos HTTP potencialmente perigosos
 
-**Tempo de execução:** Longo
+**Complexidade Temporal:** Alta
 
-**Exemplo de detecção:**
-- /admin/ directory indexing enabled
-- Server allows TRACE method
-- Outdated Apache version detected
-- Missing security headers
+**Exemplos de Detecções:**
+- Directory listing habilitado em /admin/
+- Método HTTP TRACE permitido (vulnerável a XST)
+- Versão desatualizada do Apache Server detectada
+- Headers de segurança ausentes ou mal-configurados
 
 ---
 
-## Executando Testes Unitários -- verficação da funcionalidade dos testes
+## Testes Unitários
+
+Execução da suite de testes:
 
 ```bash
 python3 src/tests/test_scanner.py
 ```
 
-É esperado que todos os testes passem sem erros.
+O comportamento esperado é a conclusão bem-sucedida de todos os casos de teste sem exceções.
 
 ---
 
+## Troubleshooting
+
 ### Erro: "URL inválida"
 
-Certifique-se que a URL começa com http:// ou https://
+Certifique-se de que a URL inclui o esquema de protocolo (http:// ou https://)
 
 ```bash
-# Incorreto
+# Sintaxe incorreta
 python3 src/scanner.py example.com
 
-# Correto
+# Sintaxe correta
 python3 src/scanner.py http://example.com
 ```
+
+---
+
+## Recursos Adicionais
+
+**Demonstração em vídeo:** [https://youtu.be/2BzHt9pSgxQ]
